@@ -25,7 +25,7 @@ _tabbg2 = 'grey89'
 _bgmode = 'light' 
 
 def Train():
-    total = 20
+    total = 30
     mp_face_detection = mp.solutions.face_detection   # 建立偵測方法
     mp_drawing = mp.solutions.drawing_utils           # 建立繪圖方法
     if not os.path.exists("library"):                    # 如果不存在library資料夾
@@ -150,19 +150,23 @@ def Identify():
                 print("未偵測到臉, 請露出正臉, 不要遮擋臉!謝謝~")
         cap.release()                                       # 關閉攝影機
         cv2.destroyAllWindows()
-        gray = cv2.imread("library\\face.jpg", cv2.IMREAD_GRAYSCALE)
-        val = model.predict(gray)
     gocap()
     # 讀取員工人臉
     gray = cv2.imread("library\\face.jpg", cv2.IMREAD_GRAYSCALE)
     val = model.predict(gray)
     if val[1] < 50:                                     #人臉辨識成功
-        messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}\n匹配值是: {val[1]:6.2f}")
+        messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}\n匹配值是: {val[1]:6.2f}\n")
         print(f"歡迎DYU資工學生: {names[val[0]]}")
         print(f"匹配值是: {val[1]:6.2f}")
     else:
         messagebox.showerror("非常抱歉","對不起你不是學生, 請洽系辦公室")
         print("對不起你不是學生, 請洽系辦公室")
+        test22 = tk.messagebox.askquestion('提示!',f"你跟: {names[val[0]]}匹配值是: {val[1]:6.2f} | 非常接近")
+        if test22 == 'yes':
+            messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}")
+        else:
+            print("請洽系辦公室")
+        
 
 
 class Toplevel1:
@@ -201,7 +205,6 @@ class Toplevel1:
 
 
 if __name__ == '__main__':
-    '''Main entry point for the application.'''
     global root
     root = tk.Tk()
     root.protocol( 'WM_DELETE_WINDOW' , root.destroy)
