@@ -25,7 +25,7 @@ _tabbg2 = 'grey89'
 _bgmode = 'light' 
 
 def Train():
-    total = 20
+    total = 100
     mp_face_detection = mp.solutions.face_detection   # 建立偵測方法
     mp_drawing = mp.solutions.drawing_utils           # 建立繪圖方法
     if not os.path.exists("library"):                    # 如果不存在library資料夾
@@ -118,38 +118,50 @@ def Train():
     print(f'人臉辨識資料庫完成\n目前存在的學生:\n標籤名稱 = {nameList}')
 #-------------------------------------------------------------------------------
 def Identify():
-    pictPath = r'library\\haarcascade_frontalface_alt.xml'
-    face_cascade = cv2.CascadeClassifier(pictPath)      # 建立辨識物件
+    mp_face_detection = mp.solutions.face_detection   # 建立偵測方法
+    mp_drawing = mp.solutions.drawing_utils           # 建立繪圖方法
 
     model = cv2.face.LBPHFaceRecognizer_create()
     model.read('library\\deepmind.yml')                  # 讀取已訓練模型
     f = open('library\\employee.txt', 'r')               # 開啟姓名標籤
-    names = f.readline().split(',')                     # 將學號存於串列
+    names = f.readline().split(',')                     # 將姓名存於串列
 
     def gocap():
         cap = cv2.VideoCapture(0)
         while(cap.isOpened()):                              # 如果開啟攝影機成功
-            ret, img = cap.read()                           # 讀取影像
-            faces = face_cascade.detectMultiScale(img, scaleFactor=1.1,
-                        minNeighbors = 3, minSize=(20,20))
-            for (x, y, w, h) in faces:
-                cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,255),1)  # 藍色框住人臉
-                cv2.putText(img, "good", (8,30),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, cv2.LINE_AA)
-            cv2.imshow("Face", img)                         # 顯示影像
-            k = cv2.waitKey(200)                            # 0.2秒讀鍵盤一次
-            if ret == True and len(faces):       
-                print("已偵測到臉, 可按住空格鍵進行拍照檢測")
-                if k == ord(" "):          # 按 空格
-                    imageCrop = img[y:y+h,x:x+w]                    # 裁切
-                    imageResize = cv2.resize(imageCrop,(160,160))   # 重製大小
-                    cv2.imwrite("library\\face.jpg", imageResize)    # 將測試人臉存檔
-                    break
-            else:
-                print("未偵測到臉, 請露出正臉, 不要遮擋臉!謝謝~")
-        cap.release()                                       # 關閉攝影機
-        cv2.destroyAllWindows()
-        gray = cv2.imread("library\\face.jpg", cv2.IMREAD_GRAYSCALE)
-        val = model.predict(gray)
+            with mp_face_detection.FaceDetection(             # 開始偵測人臉
+            model_selection=1, min_detection_confidence=0.5) as face_detection:
+                while True:
+                    ret, img = cap.read()
+                    if not ret:
+                        print("Cannot receive frame")
+                        break
+                    img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)   # 將 BGR 顏色轉換成 RGB
+                    results = face_detection.process(img2)        # 偵測人臉
+
+                    if results.detections:
+                        for detection in results.detections:
+                            bboxC = detection.location_data.relative_bounding_box
+                            ih, iw, ic = img.shape
+                            bbox = (int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih))
+                            cv2.rectangle(img, bbox, (255,255,255), 1)
+                    cv2.imshow('oxxostudio', img)
+                    x = int(bboxC.xmin * iw)
+                    y = int(bboxC.ymin * ih)
+                    w = int(bboxC.width * iw)
+                    h = int(bboxC.height * ih)
+                    key = cv2.waitKey(200)
+                    if ret == True:       
+                        print("已偵測到臉, 可按住空格鍵進行拍照檢測")
+                        if key == ord(" "):          # 按 空格
+                            imageCrop = img[y:y+h,x:x+w]                    # 裁切
+                            imageResize = cv2.resize(imageCrop,(160,160))   # 重製大小
+                            cv2.imwrite("library\\face.jpg", imageResize)    # 將測試人臉存檔
+                            break
+            cap.release()                                       # 關閉攝影機
+            cv2.destroyAllWindows()
+            gray = cv2.imread("library\\face.jpg", cv2.IMREAD_GRAYSCALE)
+            val = model.predict(gray)
     gocap()
     # 讀取員工人臉
     gray = cv2.imread("library\\face.jpg", cv2.IMREAD_GRAYSCALE)
