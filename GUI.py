@@ -24,8 +24,28 @@ _tabbg1 = 'grey75'
 _tabbg2 = 'grey89' 
 _bgmode = 'light' 
 
+def student_ID():
+    student_ID = tk.Tk()
+    student_ID.title('輸入學號')
+    student_ID.geometry("300x80+750+350")
+    def getTextInput():
+        result=textExample.get(1.0, tk.END+"-1c")
+        f = open('student_ID.txt', 'w')
+        f.write(result)
+        f.close()
+        student_ID.quit()
+
+    textExample=tk.Text(student_ID, height=1)
+    textExample.pack()
+    btnRead=tk.Button(student_ID, height=1, width=10, text="Read", 
+                        command=getTextInput)
+
+    btnRead.pack()
+
+    student_ID.mainloop()
+
 def Train():
-    total = 100
+    total = 10
     mp_face_detection = mp.solutions.face_detection   # 建立偵測方法
     mp_drawing = mp.solutions.drawing_utils           # 建立繪圖方法
     if not os.path.exists("library"):                    # 如果不存在library資料夾
@@ -34,7 +54,13 @@ def Train():
     else:
         inputyml = tk.messagebox.askquestion('錄製人臉','是否啟動攝像頭 (y/n)')
         if inputyml == 'yes':
-            name = input("請輸入學號 : ")
+            student_ID()
+            path = 'student_ID.txt'
+            f = open(path, 'r')
+            name = f.read()
+            f.close()
+            fileTest = r"student_ID.txt"
+            os.remove(fileTest)
             if os.path.exists("library\\" + name):
                 messagebox.showinfo('提示','此名字的人臉資料已經存在')
                 print("此名字的人臉資料已經存在")
