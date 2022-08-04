@@ -41,7 +41,6 @@ def student_ID():
                         command=getTextInput)
 
     btnRead.pack()
-
     student_ID.mainloop()
 
 def Train():
@@ -69,7 +68,7 @@ def Train():
                 cap = cv2.VideoCapture(0)                       # 開啟攝影機
                 num = 1                                         # 影像編號
                 with mp_face_detection.FaceDetection(             # 開始偵測人臉
-        model_selection=1, min_detection_confidence=0.5) as face_detection:
+        model_selection=0, min_detection_confidence=0.5) as face_detection:
 
                     if not cap.isOpened():
                         print("Cannot open camera")
