@@ -13,17 +13,6 @@ import mediapipe as mp
 _script = sys.argv[0]
 _location = os.path.dirname(_script)
 
-_bgcolor = '#d9d9d9'  # X11 color: 'gray85'
-_fgcolor = '#000000'  # X11 color: 'black'
-_compcolor = 'gray40' # X11 color: #666666
-_ana1color = '#c3c3c3' # Closest X11 color: 'gray76'
-_ana2color = 'beige' # X11 color: #f5f5dc
-_tabfg1 = 'black' 
-_tabfg2 = 'black' 
-_tabbg1 = 'grey75' 
-_tabbg2 = 'grey89' 
-_bgmode = 'light' 
-
 def student_ID():
     student_ID = tk.Tk()
     student_ID.title('輸入學號')
