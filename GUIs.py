@@ -62,7 +62,7 @@ def Train():
                     if not cap.isOpened():
                         print("Cannot open camera")
                         exit()
-                    while True:
+                    while num <= total:
                         ret, img = cap.read()
                         if not ret:
                             print("Cannot receive frame")
@@ -91,10 +91,6 @@ def Train():
                                                 str(num) + ".jpg"
                                     cv2.imwrite(faceName, imageResize)      # 儲存人臉影像   
                                     key = cv2.waitKey(200)
-                                    if num >= total:                        # 拍指定人臉數後才終止               
-                                        if num == total:
-                                            print(f"拍攝第 {num} 次人臉成功")
-                                        break
                                     print(f"拍攝第 {num} 次人臉成功")
                                     num += 1
                             else:
