@@ -28,8 +28,8 @@ def student_ID():
     textExample.pack()
     btnRead=tk.Button(student_ID, height=1, width=10, text="Read", 
                         command=getTextInput)
-
     btnRead.pack()
+    student_ID.after(15000,student_ID.destroy)
     student_ID.mainloop()
 
 def Train():
