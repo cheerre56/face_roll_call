@@ -15,25 +15,51 @@
     添加點名系統模塊:
         添加資料庫
         將名字寫入資料庫
+        自動辨別月份並只紀錄平日
         掃臉成功識別後紀錄出席
+        
 如有BUG麻煩回報
 """
-
 
 import sys
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter.constants import *
 from tkinter import messagebox
+from ttkthemes import ThemedStyle
 import os.path
 import cv2
 import os
 import glob
 import numpy as np
 import mediapipe as mp
+import openpyxl
+import pandas as pd
+from openpyxl import load_workbook
+from datetime import date
+from datetime import datetime
+import datetime
+import os
+import calendar
+from time import time,localtime
+import tkinter as tk
+from tkinter import filedialog
+
 
 _script = sys.argv[0]
 _location = os.path.dirname(_script)
+_bgcolor = '#d9d9d9'  # X11 color: 'gray85'
+_fgcolor = '#000000'  # X11 color: 'black'
+_compcolor = 'gray40' # X11 color: #666666
+_ana1color = '#c3c3c3' # Closest X11 color: 'gray76'
+_ana2color = 'beige' # X11 color: #f5f5dc
+_tabfg1 = 'black' 
+_tabfg2 = 'black' 
+_tabbg1 = 'grey75' 
+_tabbg2 = 'grey89' 
+_bgmode = 'light' 
+today = date.today()
+d1 = today.strftime("%d")
 
 def student_ID():
     student_ID = tk.Tk()
@@ -53,11 +79,42 @@ def student_ID():
     btnRead.pack()
     student_ID.after(15000,student_ID.destroy)
     student_ID.mainloop()
-
+def excel():
+    i=0
+    day=0
+    ####################################當月月數
+    tonow = datetime.datetime.now()
+    yyyy=tonow.year
+    mm=tonow.month
+    dd=tonow.day
+    today = date.today()
+    d1 = today.strftime("%d")
+    days=calendar.monthrange(yyyy,mm)[1]
+    ####################################新增excel
+    pp="test.xlsx"
+    if not os.path.isfile(pp):     
+        wb = openpyxl.Workbook()# 利用 Workbook 建立一個新的工作簿
+        wb.create_sheet("點名表", 0) # 新增工作表並指定放置位置
+        sheet = wb.worksheets[0]# 取得第一個工作表
+        sheet[chr(65)+'1'].value = '學號'    #創建基本欄位
+        while day<days:
+            day=day+1
+            temp = pd.Timestamp(str(yyyy)+'-'+str(mm)+'-'+str(day))
+            i=i+1
+            print('i=',i)
+            
+            if temp.day_name()=='Saturday':#跳過假日
+                day+=2
+                if day>days:
+                    break
+            sheet[chr(65+int(i))+'1'].value =  day
+        wb.save(pp)# 儲存檔案
+        print('工做表:',wb.sheetnames)      
 def Train():
-    total = 10
-    #test 功能 紀錄拍了幾張 未來更新補充照片功能
+    global name
+    total = 100
     testnub = str(total)
+
     mp_face_detection = mp.solutions.face_detection   # 建立偵測方法
     mp_drawing = mp.solutions.drawing_utils           # 建立繪圖方法
     if not os.path.exists("library"):                    # 如果不存在library資料夾
@@ -85,7 +142,7 @@ def Train():
                 cap = cv2.VideoCapture(0)                       # 開啟攝影機
                 num = 1                                         # 影像編號
                 with mp_face_detection.FaceDetection(             # 開始偵測人臉
-                model_selection=0, min_detection_confidence=0.5) as face_detection:
+                model_selection=1, min_detection_confidence=0.5) as face_detection:
 
                     if not cap.isOpened():
                         print("Cannot open camera")
@@ -106,8 +163,7 @@ def Train():
                                     bbox = (int(bboxC.xmin * iw), int(bboxC.ymin * ih), 
                                             int(bboxC.width * iw), int(bboxC.height * ih))
                                     cv2.rectangle(img, bbox, (255,255,255), 1)  # 標記人臉
-                                    cv2.putText(img, f"Name: {name} Now{num}", (bbox[0], bbox[1]-20),
-                                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 1, cv2.LINE_AA)
+                                    cv2.putText(img, f"Name: {name} Now{num}", (bbox[0], bbox[1]-20),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 1, cv2.LINE_AA)
                                     cv2.imshow('oxxostudio', img)
                                     x = int(bboxC.xmin * iw)
                                     y = int(bboxC.ymin * ih)
@@ -127,6 +183,7 @@ def Train():
                 cv2.destroyAllWindows()
         else:
             print("將以存在的資料夾進行訓練")
+
 
     # 讀取人臉樣本和放入faces_db, 同時建立標籤與人名串列
     nameList = []                                       # 學生學號
@@ -150,15 +207,17 @@ def Train():
 
     f.write(','.join(nameList))
     f.close()
-
     print('建立人臉辨識資料庫')
     model = cv2.face.LBPHFaceRecognizer_create()        # 建立LBPH人臉辨識物件
     model.train(faces_db, np.array(labels))             # 訓練LBPH人臉辨識
     model.save('library\\deepmind.yml')                  # 儲存LBPH訓練數據
     messagebox.showinfo(f'提示',f'人臉辨識資料庫完成\n目前存在的學生:\n{nameList}')
     print(f'人臉辨識資料庫完成\n目前存在的學生:\n標籤名稱 = {nameList}')
+    Name=name
+    new()
 #-------------------------------------------------------------------------------
 def Identify():
+    global NAME
     mp_face_detection = mp.solutions.face_detection   # 建立偵測方法
     mp_drawing = mp.solutions.drawing_utils           # 建立繪圖方法
     
@@ -206,21 +265,90 @@ def Identify():
             gray = cv2.imread("library\\face.jpg", cv2.IMREAD_GRAYSCALE)
             val = model.predict(gray)
     gocap()
-    # 讀取員工人臉
     gray = cv2.imread("library\\face.jpg", cv2.IMREAD_GRAYSCALE)
     val = model.predict(gray)
     if val[1] < 50:                                     #人臉辨識成功
         messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}\n匹配值是: {val[1]:6.2f}")
-        print(f"歡迎DYU資工學生: {names[val[0]]}")
-        print(f"匹配值是: {val[1]:6.2f}")
-    else:
+        #print(f"歡迎DYU資工學生: {names[val[0]]}")
+        #print(f"匹配值是: {val[1]:6.2f}")
+        NAME=names[val[0]]
+        record()
+    elif val[1] > 50 and val[1] < 75:
         test22 = tk.messagebox.askquestion('提示!',f"你跟: {names[val[0]]}匹配值是: {val[1]:6.2f} | 非常接近")
         if test22 == 'yes':
             messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}")
+            NAME=names[val[0]]
+            record()
         else:
             messagebox.showerror( "Erro!","請洽詢辦公室或者教授 ")
-
-
+    else:
+            messagebox.showerror( "Erro!","請洽詢辦公室或者教授 ")
+def oas():
+ global root
+ root = tk.Tk()
+ style = ThemedStyle(root)
+ style.set_theme("breeze")
+ root.geometry("1600x500")
+ root.title('點名紀錄')
+ qq="test.xlsx"
+ df = pd.read_excel(qq,header=0)
+ cols = list(df.columns)
+ tree = ttk.Treeview(root)
+ tree.pack()
+ tree["columns"] = cols
+ for i in cols:
+    tree.column(i,anchor="center",width=10)
+    tree.heading(i,text=i,anchor='center')
+ for index, row in df.iterrows():
+    tree.insert("",'end',text = index,values=list(row))
+ tree.place(relx=0,rely=0.1,relheight=0.7,relwidth=1)
+def new():
+    tonow = datetime.datetime.now()
+    yyyy=tonow.year
+    mm=tonow.month
+    dd=tonow.day
+    week= (int(datetime.date(yyyy, mm, dd).strftime("%W")) -
+           int(datetime.date(yyyy, mm, 1).strftime("%W")))*2
+    today = date.today()
+    d1 = today.strftime("%d")
+    days=calendar.monthrange(yyyy,mm)[1]
+    excel()
+    pp="test.xlsx"
+    wb = load_workbook(pp)
+    sheet = wb.worksheets[0]# 取得第一個工作表
+    wb.active = 0
+    ws = wb.active
+    ####################################修改
+    a=str(ws.max_row+1) #新增下一位資料
+    ws['A'+str(a)].value = name
+    dayA=chr(65+int(d1)-week)
+    sheet[dayA+str(a)].value =  '●'
+    wb.save(pp) 
+def record():
+    tonow = datetime.datetime.now()
+    yyyy=tonow.year
+    mm=tonow.month
+    dd=tonow.day
+    week= (int(datetime.date(yyyy, mm, dd).strftime("%W")) -
+           int(datetime.date(yyyy, mm, 1).strftime("%W")))*2
+    pp="test.xlsx"
+    excel()
+    ####################################修改
+    wb = load_workbook(pp)
+    sheet = wb.worksheets[0]# 取得第一個工作表
+    ####################################出席紀錄
+    wb.active = 0
+    ws = wb.active
+    a=str(ws.max_row+1) #新增下一筆點名記錄
+    i=1
+    while i<int(a):
+        if sheet['A'+str(i)].value==NAME:
+            dayA=chr(65+int(d1)-week)
+            sheet[dayA+str(i)].value =  '●'
+            wb.save(pp) 
+            break
+        else:
+            i+=1
 class Toplevel1:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
@@ -253,13 +381,14 @@ class Toplevel1:
         self.Button1_1_1.place(relx=0.5, rely=0.506, height=130, width=280)
         self.Button1_1_1.configure(activebackground="#e7e7e7", activeforeground="black", background="#efefef", compound='left', 
                                     cursor="hand2", disabledforeground="#a3a3a3", foreground="#000000", highlightbackground="#d9d9d9", 
-                                    highlightcolor="black", pady="0", relief="ridge", text='''查看點名詳情''', font=('微軟正黑體 Light', '12'))
-
+                                    highlightcolor="black", pady="0", relief="ridge", text='''查看點名詳情''', font=('微軟正黑體 Light', '12'),
+                                    command=oas)
 
 if __name__ == '__main__':
+    '''Main entry point for the application.'''
     global root
     root = tk.Tk()
-    root.protocol( 'WM_DELETE_WINDOW', root.destroy)
+    root.protocol( 'WM_DELETE_WINDOW' , root.destroy)
     # Creates a toplevel widget.
     global _top1, _w1
     _top1 = root
