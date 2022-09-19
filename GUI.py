@@ -10,6 +10,12 @@
     識別模型模塊:
                 將原本的opencv改成用mediapipe截臉部
     解決剛開始沒掃到臉崩潰的問題
+    增加識別容錯度
+    增加標記目前該同學資料(照片)數
+    可能添加{
+                1.如果識別val[1]高於50 小於 75 並且選是後將學生照片放入該同學資料夾訓練
+                2.可以重複添加同學號資料(照片)數
+            }
     -----
     BOTI:
     添加點名系統模塊:
@@ -44,6 +50,8 @@ import calendar
 from time import time,localtime
 import tkinter as tk
 from tkinter import filedialog
+
+import shutil
 
 
 _script = sys.argv[0]
@@ -273,15 +281,16 @@ def Identify():
         #print(f"匹配值是: {val[1]:6.2f}")
         NAME=names[val[0]]
         record()
-    elif val[1] > 50 and val[1] < 75:
+    else:
         test22 = tk.messagebox.askquestion('提示!',f"你跟: {names[val[0]]}匹配值是: {val[1]:6.2f} | 非常接近")
         if test22 == 'yes':
             messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}")
+            f1 = 'library/face.jpg'    # 欲複製的檔案
+            f2 = f'library/{names[val[0]]}/{names[val[0]]}101.jpg'  # 存檔的位置與檔案名稱 !!!!!需修改 讀取照片數量並+1
+            shutil.copyfile(f1,f2)   # 複製檔案
             NAME=names[val[0]]
             record()
         else:
-            messagebox.showerror( "Erro!","請洽詢辦公室或者教授 ")
-    else:
             messagebox.showerror( "Erro!","請洽詢辦公室或者教授 ")
 def oas():
  global root
