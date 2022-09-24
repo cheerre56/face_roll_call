@@ -12,10 +12,6 @@
     解決剛開始沒掃到臉崩潰的問題
     增加識別容錯度
     增加標記目前該同學資料(照片)數
-    可能添加{
-                1.如果識別val[1]高於50 小於 75 並且選是後將學生照片放入該同學資料夾訓練
-                2.可以重複添加同學號資料(照片)數
-            }
     -----
     BOTI:
     添加點名系統模塊:
@@ -120,9 +116,7 @@ def excel():
         print('工做表:',wb.sheetnames)      
 def Train():
     global name
-    total = 100
-    testnub = str(total)
-
+    total = 5
     mp_face_detection = mp.solutions.face_detection   # 建立偵測方法
     mp_drawing = mp.solutions.drawing_utils           # 建立繪圖方法
     if not os.path.exists("library"):                    # 如果不存在library資料夾
@@ -143,10 +137,6 @@ def Train():
                 print("此名字的人臉資料已經存在")
             else:
                 os.mkdir("library\\" + name)
-                test = open('library\\' + name + "\\" + "test.txt", 'w')
-                #test 功能 紀錄拍了幾張 未來更新補充照片功能
-                test.write(testnub)
-                test.close()
                 cap = cv2.VideoCapture(0)                       # 開啟攝影機
                 num = 1                                         # 影像編號
                 with mp_face_detection.FaceDetection(             # 開始偵測人臉
@@ -212,9 +202,16 @@ def Train():
     print(f"標籤序號 ={labels}")
     # 儲存人名串列，可在未來辨識人臉時使用
     f = open('library\\employee.txt', 'w')
-
+    test = open('library\\' + name + "\\" + "test.txt", 'w')
+    checkpng = 'library\\' + name
+    checkpngfiles = os.listdir(checkpng)
+    num_png = len(checkpngfiles)
+    num_png -= 1
+    num_png = str(num_png)
+    test.write(num_png)
     f.write(','.join(nameList))
     f.close()
+    test.close()
     print('建立人臉辨識資料庫')
     model = cv2.face.LBPHFaceRecognizer_create()        # 建立LBPH人臉辨識物件
     model.train(faces_db, np.array(labels))             # 訓練LBPH人臉辨識
@@ -277,21 +274,35 @@ def Identify():
     val = model.predict(gray)
     if val[1] < 50:                                     #人臉辨識成功
         messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}\n匹配值是: {val[1]:6.2f}")
-        #print(f"歡迎DYU資工學生: {names[val[0]]}")
-        #print(f"匹配值是: {val[1]:6.2f}")
         NAME=names[val[0]]
         record()
+    #elif val[1] >50 and val[1] < 80:
+        #test22 = tk.messagebox.askquestion('提示!',f"你跟: {names[val[0]]}匹配值是: {val[1]:6.2f} | 非常接近")
+        #if test22 == 'yes':
+            #NAME=names[val[0]]
+            #path = f'library\\' + NAME +'\\' + 'test.txt'
+            #readnub = open(path, 'r')
+            #add = readnub.read()
+            #cover = open(path, 'r+')
+            #add = int(add)
+            #add = add + 1
+            #add = str(add)
+            #cover.write(add)
+            #print(add)
+            #f1 = 'library\\face.jpg'    # 欲複製的檔案
+            #f2 = 'library\\' + NAME + '\\' + NAME + add + '.jpg'  # 存檔的位置與檔案名稱
+            #shutil.copyfile(f1,f2)   # 複製檔案
+            #messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}")
+            #record()
+        #else:
+            #nomod = tk.messagebox.askquestion('提示!',"點名失敗!\n如果是新加選同學請點[加入人臉模型] 或者按下方的 [是] 錄製\n如果不是請重新進行識別")
+            #if nomod == 'yes':
+                #Train()
     else:
-        test22 = tk.messagebox.askquestion('提示!',f"你跟: {names[val[0]]}匹配值是: {val[1]:6.2f} | 非常接近")
-        if test22 == 'yes':
-            messagebox.showinfo( "歡迎DYU資工學生", f"歡迎DYU資工學生: {names[val[0]]}")
-            f1 = 'library/face.jpg'    # 欲複製的檔案
-            f2 = f'library/{names[val[0]]}/{names[val[0]]}101.jpg'  # 存檔的位置與檔案名稱 !!!!!需修改 讀取照片數量並+1
-            shutil.copyfile(f1,f2)   # 複製檔案
-            NAME=names[val[0]]
-            record()
-        else:
-            messagebox.showerror( "Erro!","請洽詢辦公室或者教授 ")
+        nomod = tk.messagebox.askquestion('提示!',"點名失敗!\n如果是新加選同學請點[加入人臉模型] 或者按下方的 [是] 錄製\n如果不是請重新進行識別")
+        if nomod == 'yes':
+            Train()
+
 def oas():
  global root
  root = tk.Tk()
